@@ -20,11 +20,15 @@ npm install
 | src              | 源文件夹             |
 | src/pages        | 页面文件夹           |
 | src/static       | 静态文件夹           |
+| src/stores       | 状态管理仓库         |
+| src/utils        | 工具文件夹           |
 | src/main.ts      | 资源入口文件         |
-| src/pages.ts     | 页面配置文件         |
+| src/pages.json   | 页面配置文件         |
 | src/env.d.ts     | 环境变量类型声明文件 |
+| src/uni.scss     | 全局 scss 文件       |
 | .env.development | 开发环境变量         |
 | .env.productino  | 生产环境变量         |
+| .eslintrc.js     | eslint 配置文件      |
 | .prettierrc      | 格式化文件           |
 | index.html       | 入口文件             |
 | dist/dev         | 开发编译打包文件     |

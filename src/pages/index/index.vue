@@ -1,8 +1,13 @@
 <template>
   <!-- 直接从 store 中访问 state -->
   <div>Current Count: {{ counter.count }}</div>
-  <button @click="counter.increment">+1</button>
-  <button @click="counter.$patch({ count: counter.count + 1 })">+1</button>
+  <div>Current DoubleCount: {{ counter.doubleCount }}</div>
+  <uv-button type="primary" @click="counter.increment">+1</uv-button>
+  <uv-button
+    type="primary"
+    @click="counter.$patch({ count: counter.count + 1 })"
+    >+1</uv-button
+  >
 </template>
 
 <script setup lang="ts">
