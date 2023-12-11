@@ -1,11 +1,13 @@
 # 版本
 
-| 工具       | 版本     |
-| ---------- | -------- |
-| node       | ^18.19.3 |
-| vue        | ^3.2.45  |
-| vite       | ^4.1.4   |
-| typescript | ^4.9.4   |
+| 工具                                               | 版本     |
+| -------------------------------------------------- | -------- |
+| [node](https://nodejs.org/)                        | ^18.19.3 |
+| [vue](https://cn.vuejs.org/)                       | ^3.2.45  |
+| [pinia](https://pinia.vuejs.org/)                  | ^2.0.33  |
+| [vite](https://cn.vitejs.dev)                      | ^4.1.4   |
+| [uv-ui](https://www.uvui.cn/components/intro.html) | ^1.1.18  |
+| [typescript](https://www.typescriptlang.org/)      | ^4.9.4   |
 
 # 安裝依賴包
 
