@@ -20,7 +20,13 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     sourceType: 'module'
   },
-  plugins: ['@typescript-eslint', 'vue', 'prettier'],
+  plugins: [
+    '@typescript-eslint',
+    'vue',
+    'prettier',
+    'import',
+    'unused-imports'
+  ],
   rules: {
     'prettier/prettier': [
       'error',
@@ -28,6 +34,22 @@ module.exports = {
         endOfLine: 'auto'
       }
     ],
-    'vue/multi-word-component-names': 'off'
+    'vue/multi-word-component-names': 'off',
+    'import/order': [
+      'error',
+      {
+        'newlines-between': 'always',
+        groups: [['builtin', 'external', 'internal']],
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true
+        }
+      }
+    ],
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': [
+      'error',
+      { vars: 'all', args: 'after-used', ignoreRestSiblings: true }
+    ]
   }
 }
