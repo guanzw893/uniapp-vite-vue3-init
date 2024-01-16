@@ -3,7 +3,7 @@
 | 工具                                               | 版本     |
 | -------------------------------------------------- | -------- |
 | [node](https://nodejs.org/)                        | ^18.19.3 |
-| [vue](https://cn.vuejs.org/)                       | ^3.2.45  |
+| [vue](https://cn.vuejs.org/)                       | ^3.4.14  |
 | [pinia](https://pinia.vuejs.org/)                  | ^2.0.33  |
 | [vite](https://cn.vitejs.dev)                      | ^4.1.4   |
 | [uv-ui](https://www.uvui.cn/components/intro.html) | ^1.1.18  |
