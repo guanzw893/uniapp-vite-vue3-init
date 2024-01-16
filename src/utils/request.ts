@@ -1,13 +1,14 @@
-import { getToken, removeToken } from '@/utils/storage'
+import { getToken, removeToken, getUrl } from '@/utils'
 
-const baseURL = import.meta.env.VITE_BASE_API
+export const baseURL = import.meta.env.VITE_BASE_API
+const timeout = 60000
 
 console.log('baseURL ==> ', baseURL)
 
-type ResponseType<T = unknown> = {
-  code?: number
-  msg?: string
-  data?: T
+export type ResponseType<T = unknown> = {
+  code: number
+  msg: string
+  data: T
 }
 
 type Methods =
@@ -25,85 +26,94 @@ uni.addInterceptor('request', {
     if (!res.url.includes('/login')) {
       res.header = {
         ...res.header,
-        Authorization: 'Bearer ' + (getToken() ?? '')
+        Authorization: 'Bearer ' + getToken()
       }
     }
-    uni.showLoading({
-      title: '加载中',
-      mask: true
-    })
-  },
-  success(res: { data: ResponseType }) {
-    if (res.data.code === 401) {
-      uni.showToast({
-        title: res.data.msg || '页面加载异常，请重试！',
-        icon: 'error',
-        mask: true
-      })
-      // 删除 Token
-      removeToken()
-      // 跳转登录页
-      uni.navigateTo({
-        url: '/login'
-      })
-    } else if (res.data.code !== 200) {
-      uni.showToast({
-        title: res.data.msg || '页面加载异常，请重试！',
-        icon: 'error',
-        mask: true
-      })
-    }
-  },
-  fail(res: { data: ResponseType }) {
-    uni.showToast({
-      title: res.data?.msg || '页面加载异常，请重试！',
-      icon: 'error',
-      mask: true
-    })
-  },
-  complete() {
-    uni.hideLoading()
   }
 })
 
-uni.addInterceptor({
-  returnValue(res) {
-    return res.then((r: any) => r.data)
-  }
-})
-
-const getUrl = (base: string, url: string) => {
-  return (
-    (base.endsWith('/') ? base.slice(0, -1) : base) +
-    '/' +
-    (url.startsWith('/') ? url.slice(1) : url)
-  )
-}
-
-const request = async <T = unknown>(
+export const request = async <T = unknown>(
   url: string,
-  method: Methods,
+  method: Methods = 'GET',
   data?: Record<string, any>,
-  header?: any
+  config?: { header?: any; notLoading?: Boolean }
 ): Promise<ResponseType<T>> => {
-  if (method === 'GET') {
-    const us: string[] = []
-    for (const key in data) {
-      if (Array.isArray(data[key])) {
-        data[key].map((item: any) => us.push(`${key}=${item}`))
-      } else {
-        us.push(`${key}=${data[key]}`)
-      }
+  return new Promise<ResponseType<T>>((resolve, reject) => {
+    if (!config?.notLoading) {
+      // 显示加载框
+      uni.showLoading({
+        title: '加载中',
+        mask: true
+      })
     }
-    url += '?' + us.join('&')
-  }
 
-  return (await uni.request({
-    url: getUrl(baseURL, url),
-    method,
-    data,
-    header
-  })) as unknown as ResponseType<T>
+    const header: any = {}
+    if (!url.includes('/login')) {
+      header.Authorization = 'Bearer ' + getToken()
+    }
+
+    uni
+      .request({
+        url: getUrl(baseURL, url),
+        method,
+        data,
+        header: { ...header, ...config?.header },
+        timeout
+      })
+      .then((data) => {
+        const res = data.data as ResponseType<T> & {
+          status: number
+          error: string
+          userId?: string
+          appId?: string
+        }
+
+        if (res.code === 401) {
+          // 保证hideLoading之后执行
+          setTimeout(() => {
+            uni.showToast({
+              title: res.msg || '请先登录！',
+              icon: 'error',
+              mask: true
+            })
+          }, 0)
+
+          // 删除Token
+          removeToken()
+
+          reject(res)
+        } else if (res.userId || res.appId) {
+          resolve(res)
+        } else if (res.code !== 200 || (res.status && res.status !== 200)) {
+          // 保证hideLoading之后执行
+          setTimeout(() => {
+            uni.showToast({
+              title: res.msg || res.error || '页面加载异常，请重试！',
+              icon: 'error',
+              mask: true
+            })
+          }, 0)
+          reject(res)
+        } else {
+          resolve(res)
+        }
+      })
+      .catch((err) => {
+        // 保证hideLoading之后执行
+        setTimeout(() => {
+          uni.showToast({
+            title: err.errMsg || '页面加载异常，请重试！',
+            icon: 'error',
+            mask: true
+          })
+        }, 0)
+        reject(err)
+      })
+      .finally(() => {
+        if (!config?.notLoading) {
+          // 隐藏加载框
+          uni.hideLoading()
+        }
+      })
+  })
 }
-
-export default request

@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
-onLaunch(() => {
-  console.log("App Launch");
-});
-onShow(() => {
-  console.log("App Show");
-});
-onHide(() => {
-  console.log("App Hide");
-});
+import { getWxLoginCallback } from '@/api'
+
+getWxLoginCallback({ code: '1', state: '1' }).then((res) =>
+  console.log(res.data)
+)
 </script>
 <style></style>
