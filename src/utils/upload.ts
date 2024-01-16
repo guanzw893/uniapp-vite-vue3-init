@@ -1,6 +1,6 @@
-import { getUrl } from './url'
 import { baseURL, type ResponseType } from './request'
 import { getToken } from './storage'
+import { getUrl } from './url'
 
 const timeout = 10000
 
