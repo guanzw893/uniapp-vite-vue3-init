@@ -1,4 +1,5 @@
-import { isH5 } from '@/utils'
+import { useEnv } from '@/hooks'
+import { isH5, isWx } from '@/utils'
 
 export enum EImageExt {
   PNG = 'png',
@@ -87,13 +88,13 @@ export class ImageManager {
         while (n--) {
           array[n] = str.charCodeAt(n)
         }
-        return resolve(
+        resolve(
           URL.createObjectURL(new Blob([array], { type: ImageType[imageType] }))
         )
         // #endif
       } else {
         // #ifdef MP
-        if (uni.canIUse('createOffscreenCanvas')) {
+        if (uni.canIUse('createOffscreenCanvas') && isWx) {
           const canvas = uni.createOffscreenCanvas({
             type: '2d'
           }) as any
@@ -108,7 +109,6 @@ export class ImageManager {
 
           canvas.width = image.width
           canvas.height = image.height
-
           ctx.drawImage(image, 0, 0)
 
           this.canvasToTemFilePath(canvas, imageType)
@@ -117,12 +117,15 @@ export class ImageManager {
         } else {
           const ext = fileType.match(/data\:\S+\/(\S+);/)![1]
           const fileName = this.getFileName() + '.' + ext
+          const filePath = useEnv().getUserDataPath() + '/' + fileName
 
-          const filePath = (uni as any).env.USER_DATA_PATH + '/' + fileName
+          // 兼容抖音小程序
+          const buffer = uni.base64ToArrayBuffer(data)
+
           uni.getFileSystemManager().writeFile({
             filePath,
-            data,
-            encoding: 'base64',
+            data: buffer,
+            encoding: 'binary',
             success: function () {
               resolve(filePath)
             },
