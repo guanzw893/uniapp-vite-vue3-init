@@ -50,6 +50,7 @@ module.exports = {
     'unused-imports/no-unused-vars': [
       'error',
       { vars: 'all', args: 'after-used', ignoreRestSiblings: true }
-    ]
+    ],
+    'vue/valid-template-root': 'off'
   }
 }
