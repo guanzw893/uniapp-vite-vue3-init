@@ -13,6 +13,18 @@ export const ImageType = {
   [EImageExt.SVG]: 'image/svg+xml'
 }
 
+export type ChooseFileResult = {
+  size: number
+  path: string
+}
+
+export type FileInfoResult = {
+  size: number
+  errMsg: string
+}
+
+export type CompressImageResult = ChooseFileResult
+
 /**
  * 图片管理器
  */
@@ -111,7 +123,7 @@ export class ImageManager {
           canvas.height = image.height
           ctx.drawImage(image, 0, 0)
 
-          this.canvasToTemFilePath(canvas, imageType)
+          this.canvasToTemFilePath({ canvas, fileType: imageType })
             .then(resolve)
             .catch(reject)
         } else {
@@ -242,11 +254,28 @@ export class ImageManager {
   /**
    * canvas转文件路径
    */
-  canvasToTemFilePath(canvas: any, fileType: EImageExt = EImageExt.PNG) {
+  canvasToTemFilePath({
+    canvas,
+    width,
+    height,
+    quality = 1,
+    fileType = EImageExt.PNG
+  }: {
+    canvas: any
+    width?: number
+    height?: number
+    fileType?: EImageExt
+    quality?: number
+  }) {
     return new Promise<string>((resolve, reject) => {
       uni.canvasToTempFilePath({
         canvas,
         fileType,
+        quality,
+        width,
+        height,
+        destWidth: width,
+        destHeight: height,
         success(res) {
           resolve(res.tempFilePath)
         },
@@ -264,20 +293,10 @@ export class ImageManager {
     return new Promise<void>((resolve, reject) => {
       uni.saveImageToPhotosAlbum({
         filePath,
-        success: () => {
-          uni.showToast({
-            title: '保存成功',
-            icon: 'success',
-            mask: true
-          })
+        success() {
           resolve()
         },
-        fail: (err) => {
-          uni.showToast({
-            title: err.message ?? '保存失败',
-            icon: 'error',
-            mask: true
-          })
+        fail(err) {
           reject(err)
         }
       })
@@ -325,5 +344,136 @@ export class ImageManager {
       return this.downloadUrlAsImageMp(data)
       // #endif
     }
+  }
+
+  getFileInfo(filePath: string) {
+    return new Promise<FileInfoResult>((resolve, reject) => {
+      // #ifdef MP-WEIXIN
+      uni.getFileSystemManager().getFileInfo({
+        filePath,
+        success(res) {
+          resolve(res)
+        },
+        fail(err) {
+          reject(err)
+        }
+      })
+      // #endif
+      // #ifdef H5
+      uni.getFileInfo({
+        filePath,
+        success(res) {
+          resolve(res)
+        },
+        fail(err) {
+          reject(err)
+        }
+      })
+      // #endif
+    })
+  }
+
+  chooseFile(options: {
+    count: number
+    type?: 'all' | 'image' | 'video' | 'file'
+    extension?: string[]
+  }) {
+    return new Promise<ChooseFileResult[]>((resolve, reject) => {
+      // #ifdef MP-WEIXIN
+      uni.chooseMessageFile({
+        type: options.type,
+        count: options.count,
+        success(res) {
+          resolve(res.tempFiles)
+        },
+        fail(err) {
+          reject(err)
+        }
+      })
+      // #endif
+
+      // #ifdef H5
+      uni.chooseFile({
+        type: options.type as 'all' | 'image' | 'video',
+        count: options.count,
+        success(res) {
+          resolve(res.tempFiles as ChooseFileResult[])
+        },
+        fail(err) {
+          reject(err)
+        }
+      })
+      // #endif
+    })
+  }
+
+  async compressImage({
+    src,
+    quality = 8,
+    maxSize = 1024 * 1024,
+    maxWidth = 1280,
+    maxHeight = 1024
+  }: {
+    src: string
+    quality?: number
+    maxSize?: number
+    maxWidth?: number
+    maxHeight?: number
+  }): Promise<CompressImageResult> {
+    let { width, height } = await uni.getImageInfo({ src })
+
+    if (width > maxWidth) {
+      height = Math.floor(height / (width / maxWidth))
+      width = maxWidth
+    }
+    if (height > maxHeight) {
+      width = Math.floor(width / (height / maxHeight))
+      height = maxHeight
+    }
+
+    const fileInfo = await this.getFileInfo(src)
+
+    if (fileInfo.size <= maxSize) {
+      return {
+        path: src,
+        size: fileInfo.size
+      }
+    }
+
+    // #ifdef MP
+    const tempFilePath = await new Promise<string>((resolve) => {
+      uni.compressImage({
+        src,
+        quality: quality * 10,
+        compressedWidth: width,
+        compressHeight: height,
+        success: (res) => {
+          resolve(res.tempFilePath)
+        }
+      })
+    })
+    // #endif
+
+    // #ifdef H5
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    const image = new Image()
+    await new Promise((resolve, reject) => {
+      image.onerror = reject
+      image.onload = resolve
+      image.src = src
+    })
+
+    canvas.width = width
+    canvas.height = height
+    ctx?.drawImage(image, 0, 0, width, height)
+
+    const tempFilePath = canvas.toDataURL('image/jpeg', quality)
+    // #endif
+
+    const { size } = await this.getFileInfo(tempFilePath)
+
+    return { path: tempFilePath, size }
   }
 }
